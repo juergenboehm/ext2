@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <time.h>
+
 
 #include "kerneltypes.h"
 #include "libs/utils.h"
@@ -25,150 +27,15 @@ inode_ext2_t* g_root_inode_ext2;
 
 static char aux_block[AUX_BLOCK_SIZE];
 
-
-#if 0
-superblock_ext2_t supblk_test_a;
-bg_desc_ext2_t bg_desc_test_a;
-inode_ext2_t inode_test_a;
+static char* zero_block = 0;
 
 
-
-#define PRINT_uint32_t(field) { uint32_t n = sprintf( p, "%25s = %12d\n", #field, ACC->field ); \
-																		p += n; }
-
-#define PRINT_uint16_t(field) { uint32_t n = sprintf( p, "%25s = %12d\n", #field, ACC->field ); \
-																		p += n; }
-
-#define PRINT_uint8_t(field) { uint32_t n = sprintf( p, "%25s = %12d\n", #field, ACC->field ); \
-																		p += n; }
-
-#define ACC sb
-
-int sprint_superblock(superblock_ext2_t *sb, char* buf)
+uint32_t get_timestamp()
 {
-	char* p = buf;
+	time_t time_val = time(0);
+	return (uint32_t) time_val;
 
-	PRINT_uint32_t( s_inodes_count);
-	PRINT_uint32_t( s_blocks_count);
-	PRINT_uint32_t( s_r_blocks_count);
-	PRINT_uint32_t( s_free_blocks_count);
-	PRINT_uint32_t( s_free_inodes_count);
-	PRINT_uint32_t( s_first_data_block);
-	PRINT_uint32_t( s_log_block_size);
-	PRINT_uint32_t( s_log_frag_size);
-	PRINT_uint32_t( s_blocks_per_group);
-	PRINT_uint32_t( s_frags_per_group);
-	PRINT_uint32_t( s_inodes_per_group);
-	PRINT_uint32_t( s_mtime);
-	PRINT_uint32_t( s_wtime);
-	PRINT_uint16_t( s_mnt_count);
-	PRINT_uint16_t( s_max_mnt_count);
-	PRINT_uint16_t( s_magic);
-	PRINT_uint16_t( s_state);
-	PRINT_uint16_t( s_errors);
-	PRINT_uint16_t( s_minor_rev_level);
-	PRINT_uint32_t( s_lastcheck);
-	PRINT_uint32_t( s_checkinterval);
-	PRINT_uint32_t( s_creator_os);
-	PRINT_uint32_t( s_rev_level);
-	PRINT_uint16_t( s_def_resuid);
-	PRINT_uint16_t( s_def_resgid);
-
-// EXT2_DYNAMIC_REV Specific --
-
-	PRINT_uint32_t( s_first_ino);
-	PRINT_uint16_t( s_inode_size);
-	PRINT_uint16_t( s_block_group_nr);
-	PRINT_uint32_t( s_feature_compat);
-	PRINT_uint32_t( s_feature_incompat);
-	PRINT_uint32_t( s_feature_ro_compat);
-// XXX:	PRINT_uint8_t( s_uuid[16]);
-// XXX:	PRINT_uint8_t( s_volume_name[16]);
-// XXX:	PRINT_uint8_t( s_last_mounted[64]);
-	PRINT_uint32_t( s_algo_bitmap);
-
-//  Performance Hints --
-
-	PRINT_uint8_t( s_prealloc_blocks);
-	PRINT_uint8_t( s_prealloc_dir_blocks);
-	PRINT_uint16_t( xs_alignment);
-	//(alignment)
-
-// Journaling Support --
-
-//XXX:	PRINT_uint8_t( s_journal_uuid[16]);
-	PRINT_uint32_t( s_journal_inum);
-	PRINT_uint32_t( s_journal_dev);
-	PRINT_uint32_t( s_last_orphan);
-
-//  Directory Indexing Support --
-
-//XXX:	PRINT_uint32_t( s_hash_seed[4]);
-	PRINT_uint8_t( s_def_hash_version);
-//XXX:	PRINT_uint8_t( xs_padding[3]); // - reserved for future expansion
-
-//  Other options --
-
-	PRINT_uint32_t( s_default_mount_options);
-	PRINT_uint32_t( s_first_meta_bg);
-//	PRINT_uint8_t( s_unused_padding[760]); // 760	Unused - reserved for future revisions
-
-	return 0;
 }
-
-#undef ACC
-#define ACC bgd
-
-int sprint_bg_desc_t(bg_desc_ext2_t *bgd, char* buf)
-{
-
-	char *p = buf;
-
-	PRINT_uint32_t( bg_block_bitmap);
-	PRINT_uint32_t( bg_inode_bitmap);
-	PRINT_uint32_t( bg_inode_table);
-	PRINT_uint16_t( bg_free_blocks_count);
-	PRINT_uint16_t( bg_free_inodes_count);
-	PRINT_uint16_t( bg_used_dirs_count);
-	PRINT_uint16_t( bg_pad);
-
-//XXX:  PRINT_uint8_t( bg_reserved[12]) ;
-
-	return 0;
-}
-
-#undef ACC
-#define ACC inod
-
-int sprint_inode_t(inode_ext2_t *inod, char* buf)
-{
-
-	char *p = buf;
-
-	PRINT_uint16_t( i_mode);
-	PRINT_uint16_t( i_uid);
-	PRINT_uint32_t( i_size);
-	PRINT_uint32_t( i_atime);
-	PRINT_uint32_t( i_ctime);
-	PRINT_uint32_t( i_mtime);
-	PRINT_uint32_t( i_dtime);
-	PRINT_uint16_t( i_gid);
-	PRINT_uint16_t( i_links_count);
-	PRINT_uint32_t( i_blocks);
-	PRINT_uint32_t( i_flags);
-	PRINT_uint32_t( i_osd1);
-//XXX:  PRINT_uint32_t( i_block[15]);
-	PRINT_uint32_t( i_generation);
-	PRINT_uint32_t( i_file_acl);
-	PRINT_uint32_t( i_dir_acl);
-	PRINT_uint32_t( i_faddr);
-//XXX:  PRINT_uint8_t( i_osd2[12]);
-
-	return 0;
-}
-
-#endif
-
 
 
 inline uint32_t num_block_groups(superblock_ext2_t* sb)
@@ -444,6 +311,11 @@ int init_ext2_system(file_t* dev_file)
 	g_blocks_per_group_ext2 = gsb_ext2->s_blocks_per_group;
 	g_ext2_blocksize = GET_BLOCKSIZE_EXT2(gsb_ext2);
 
+	free_if_nonzero(zero_block);
+	zero_block = 0;
+	alloc_if_empty(&zero_block, g_ext2_blocksize);
+	memset(zero_block, 0, g_ext2_blocksize);
+
 
 	print_sb_ext2(gsb_ext2);
 
@@ -583,7 +455,7 @@ int read_inode_ext2(file_ext2_t* file, uint32_t inode_index)
 
 int write_inode_ext2(file_ext2_t* filp)
 {
-	int nrd = -1;
+	int nwrt = -1;
 
 	uint32_t ext2_blocksize = GET_BLOCKSIZE_EXT2(filp->sb);
 
@@ -596,9 +468,9 @@ int write_inode_ext2(file_ext2_t* filp)
 	uint32_t offs = BLKNUM_TO_OFFSET(inode_start_blk, ext2_blocksize)  +
 			inode_bgrp_local_index * sizeof(inode_ext2_t);
 
-	nrd = write_to_dev(filp->dev_file, (char*) filp->pinode, sizeof(inode_ext2_t), offs);
+	nwrt = write_to_dev(filp->dev_file, (char*) filp->pinode, sizeof(inode_ext2_t), offs);
 
-	return nrd;
+	return nwrt;
 }
 
 int get_indirect_blocks(uint32_t offset, uint32_t* index_arr, uint32_t *mode)
@@ -994,6 +866,11 @@ inline void set_bit(uint32_t bitpos, uint8_t* bitmap)
 	bitmap[bitpos / 8 ] |= (1 << (bitpos % 8));
 }
 
+inline void reset_bit(uint32_t bitpos, uint8_t* bitmap)
+{
+	bitmap[bitpos / 8 ] &= ~((uint8_t)(1 << (bitpos % 8)));
+}
+
 
 int allocate_block(file_ext2_t* filp, uint32_t goal_blk_num, uint32_t *new_blk_num)
 {
@@ -1011,26 +888,25 @@ int allocate_block(file_ext2_t* filp, uint32_t goal_blk_num, uint32_t *new_blk_n
 	char* blk_bitmap = 0;
 	alloc_if_empty(&blk_bitmap, ext2_blocksize);
 
-	bg_desc_ext2_t* pbgd_akt = 0;
-	alloc_if_empty_fun((void**)&pbgd_akt, (alloc_fun_t*) &alloc_bg_desc_ext2 );
+	bg_desc_ext2_t bgd_akt;
 
 	uint32_t allocated_blk_num = 0;
 
 	do
 	{
 
-		read_bgdesc_ext2(filp->dev_file, pbgd_akt, goal_blk_bgd_akt);
+		read_bgdesc_ext2(filp->dev_file, &bgd_akt, goal_blk_bgd_akt);
 
-		uint32_t blk_num_bitmap = pbgd_akt->bg_block_bitmap;
+		uint32_t blk_num_bitmap = bgd_akt.bg_block_bitmap;
 
 		read_from_dev(filp->dev_file, (char*)blk_bitmap, ext2_blocksize,
 				BLKNUM_TO_OFFSET(blk_num_bitmap, ext2_blocksize));
 
 		uint32_t first_bit_akt =
-				get_first_data_block_pos_in_block_group_bitmap(goal_blk_bgd_akt, sb, pbgd_akt);
+				get_first_data_block_pos_in_block_group_bitmap(goal_blk_bgd_akt, sb, &bgd_akt);
 
 		uint32_t last_bit_akt =
-				get_last_data_block_pos_in_block_group_bitmap(goal_blk_bgd_akt, sb, pbgd_akt);
+				get_last_data_block_pos_in_block_group_bitmap(goal_blk_bgd_akt, sb, &bgd_akt);
 
 		uint32_t bit_akt = first_bit_akt;
 
@@ -1041,11 +917,11 @@ int allocate_block(file_ext2_t* filp, uint32_t goal_blk_num, uint32_t *new_blk_n
 					set_bit(bit_akt, blk_bitmap);
 					write_to_dev(filp->dev_file, (char*)blk_bitmap, ext2_blocksize,
 							BLKNUM_TO_OFFSET(blk_num_bitmap, ext2_blocksize));
-					allocated_blk_num = get_first_data_block_in_block_group(pbgd_akt, sb) + bit_akt - first_bit_akt;
+					allocated_blk_num = get_first_data_block_in_block_group(&bgd_akt, sb) + bit_akt - first_bit_akt;
 
-					--pbgd_akt->bg_free_blocks_count;
+					--bgd_akt.bg_free_blocks_count;
 
-					write_bgdesc_ext2(filp->dev_file, pbgd_akt, goal_blk_bgd_akt);
+					write_bgdesc_ext2(filp->dev_file, &bgd_akt, goal_blk_bgd_akt);
 
 					break;
 			}
@@ -1069,8 +945,16 @@ int allocate_block(file_ext2_t* filp, uint32_t goal_blk_num, uint32_t *new_blk_n
 	if (allocated_blk_num)
 	{
 		*new_blk_num = allocated_blk_num;
+
+		write_to_dev(filp->dev_file, zero_block, ext2_blocksize,
+				BLKNUM_TO_OFFSET(allocated_blk_num, ext2_blocksize));
+
 		retval = 0;
+
 	}
+
+
+	free(blk_bitmap);
 
 	return retval;
 }
@@ -1195,10 +1079,357 @@ ende:
 
 }
 
-int deallocate_data_block(blk_iterator_t* it)
+
+inline uint32_t get_first_inode_index_in_block_group(uint32_t bg_index, superblock_ext2_t* sb)
+{
+	uint32_t first_inode_index = 1 + bg_index * sb->s_inodes_per_group;
+	return first_inode_index;
+}
+
+
+// filp here only contains valid dev_file and sb fields
+// the others are filled, when the inode is created
+int allocate_new_inode(file_ext2_t* filp, uint32_t goal_bgd_index, uint16_t imode, uint32_t iflags)
 {
 
+	int retval = -1;
+
+	superblock_ext2_t* sb = filp->sb;
+
+	uint32_t num_blk_groups = num_block_groups(sb);
+
+	uint32_t ext2_blocksize = GET_BLOCKSIZE_EXT2(sb);
+
+	uint32_t inodes_per_group = sb->s_inodes_per_group;
+
+
+	char* inode_bitmap = 0;
+	alloc_if_empty(&inode_bitmap, ext2_blocksize);
+
+	bg_desc_ext2_t bgd_akt;
+
+	uint32_t bgd_akt_index = goal_bgd_index;
+
+	uint32_t new_inode_index = 0;
+	do
+	{
+
+		read_bgdesc_ext2(filp->dev_file, &bgd_akt, bgd_akt_index);
+
+		uint32_t blk_num_bitmap = bgd_akt.bg_inode_bitmap;
+
+		read_from_dev(filp->dev_file, (char*)inode_bitmap, ext2_blocksize,
+				BLKNUM_TO_OFFSET(blk_num_bitmap, ext2_blocksize));
+
+		uint32_t first_bit_akt = 0;
+		uint32_t last_bit_akt = inodes_per_group - 1;
+
+		uint32_t bit_akt = first_bit_akt;
+
+		while (bit_akt <= last_bit_akt)
+		{
+			if (!test_bit(bit_akt, inode_bitmap))
+			{
+					set_bit(bit_akt, inode_bitmap);
+					write_to_dev(filp->dev_file, (char*)inode_bitmap, ext2_blocksize,
+							BLKNUM_TO_OFFSET(blk_num_bitmap, ext2_blocksize));
+
+					new_inode_index =
+							get_first_inode_index_in_block_group(bgd_akt_index, sb) + bit_akt - first_bit_akt;
+
+					--bgd_akt.bg_free_inodes_count;
+
+					if (imode & EXT2_S_IFDIR)
+					{
+						++bgd_akt.bg_used_dirs_count;
+					}
+
+					write_bgdesc_ext2(filp->dev_file, &bgd_akt, bgd_akt_index);
+
+					break;
+			}
+			++bit_akt;
+		}
+
+		if (new_inode_index)
+		{
+			break;
+		}
+
+
+		++bgd_akt_index;
+		if (bgd_akt_index == num_blk_groups)
+		{
+			bgd_akt_index = 0;
+		}
+
+	}
+	while (bgd_akt_index != goal_bgd_index);
+
+	if (!new_inode_index)
+	{
+		goto ende;
+	}
+
+	uint32_t local_inode_index = (new_inode_index - 1) % inodes_per_group;
+
+	uint32_t inode_offset =
+			BLKNUM_TO_OFFSET(bgd_akt.bg_inode_table, ext2_blocksize) + local_inode_index * sb->s_inode_size;
+
+	alloc_if_empty_fun((void**)&filp->pinode, (alloc_fun_t*)&alloc_inode_ext2);
+	memset(filp->pinode, 0, sizeof(inode_ext2_t));
+
+	alloc_if_empty_fun((void**)&filp->pbgd, (alloc_fun_t*)&alloc_bg_desc_ext2);
+	memset(filp->pbgd, 0, sizeof(bg_desc_ext2_t));
+
+	alloc_if_empty_fun((void**)&filp->it_lpos, (alloc_fun_t*)&alloc_blk_iterator);
+	memset(filp->it_lpos, 0, sizeof(blk_iterator_t));
+
+	alloc_if_empty_fun((void**)&filp->it_end, (alloc_fun_t*)&alloc_blk_iterator);
+	memset(filp->it_end, 0, sizeof(blk_iterator_t));
+
+	filp->inode_index = new_inode_index;
+	filp->offset_inode = inode_offset;
+
+	filp->pbgd_index = bgd_akt_index;
+
+	read_bgdesc_ext2(filp->dev_file, filp->pbgd, filp->pbgd_index);
+
+	inode_ext2_t* pinode = filp->pinode;
+
+	//better set when real link is done
+	//pinode->i_links_count = 1;
+
+	pinode->i_mode = imode;
+	pinode->i_flags = iflags;
+
+	uint32_t t_stamp = get_timestamp();
+
+	pinode->i_atime = t_stamp;
+	pinode->i_ctime = t_stamp;
+	pinode->i_mtime = t_stamp;
+
+	write_inode_ext2(filp);
+
+	--sb->s_free_inodes_count;
+	sb->s_wtime = t_stamp;
+
+	write_superblock_ext2(filp->dev_file, sb);
+
+	blk_iterator_init(filp->it_lpos, filp, 0);
+	blk_iterator_init(filp->it_end, filp, 0);
+
+	retval = 0;
+
+
+	free(inode_bitmap);
+	//free(pbgd_akt);
+
+	ende:
+	return retval;
+
 }
+
+int deallocate_block(file_ext2_t* file_del, uint32_t del_blk_num)
+{
+	int retval = -1;
+
+	if (!del_blk_num)
+	{
+		return 0;
+	}
+
+	superblock_ext2_t* sb = file_del->sb;
+
+	uint32_t ext2_blocksize = GET_BLOCKSIZE_EXT2(sb);
+
+	uint32_t del_blk_bgd_index = blk_num_to_blk_group(sb, del_blk_num);
+
+	uint32_t del_blk_bgd_akt = del_blk_bgd_index;
+
+	char* blk_bitmap = 0;
+	alloc_if_empty(&blk_bitmap, ext2_blocksize);
+
+
+	bg_desc_ext2_t bgd_akt;
+
+	read_bgdesc_ext2(file_del->dev_file, &bgd_akt, del_blk_bgd_akt);
+
+	uint32_t blk_num_bitmap = bgd_akt.bg_block_bitmap;
+
+	read_from_dev(file_del->dev_file, blk_bitmap, ext2_blocksize,
+			BLKNUM_TO_OFFSET(blk_num_bitmap, ext2_blocksize));
+
+#if 1
+	uint32_t first_bit_akt =
+			get_first_data_block_pos_in_block_group_bitmap(del_blk_bgd_akt, sb, &bgd_akt);
+
+	uint32_t last_bit_akt =
+			get_last_data_block_pos_in_block_group_bitmap(del_blk_bgd_akt, sb, &bgd_akt);
+#endif
+
+	uint32_t bit_akt = del_blk_num - blk_group_to_blk_num(sb, del_blk_bgd_akt);
+
+	ASSERT(first_bit_akt <= bit_akt);
+	ASSERT(bit_akt <= last_bit_akt);
+
+	ASSERT(test_bit(bit_akt, blk_bitmap));
+
+	reset_bit(bit_akt, blk_bitmap);
+	write_to_dev(file_del->dev_file, blk_bitmap, ext2_blocksize,
+			BLKNUM_TO_OFFSET(blk_num_bitmap, ext2_blocksize));
+
+	++bgd_akt.bg_free_blocks_count;
+
+	write_bgdesc_ext2(file_del->dev_file, &bgd_akt, del_blk_bgd_akt);
+
+
+	++sb->s_free_blocks_count;
+
+	sb->s_wtime = get_timestamp();
+
+	write_superblock_ext2(file_del->dev_file, sb);
+
+	free(blk_bitmap);
+
+	return 0;
+
+}
+
+int deallocate_data_blocks_level(file_ext2_t* file_del, uint32_t blk_num, int level)
+{
+
+	if (!blk_num)
+	{
+		return 0;
+	}
+
+	if (!level)
+	{
+		int retval = deallocate_block(file_del, blk_num);
+		return retval;
+	}
+
+	uint32_t ext2_blocksize = GET_BLOCKSIZE_EXT2(file_del->sb);
+
+	char* scratch = (char*) malloc(ext2_blocksize);
+
+	read_from_dev(file_del->dev_file, scratch, ext2_blocksize,
+			BLKNUM_TO_OFFSET(blk_num, ext2_blocksize));
+
+	int i;
+	for(i = 0; i < ext2_blocksize/sizeof(uint32_t); ++i)
+	{
+		uint32_t del_blk_num = get_blk_from_idx_blk(scratch, i);
+
+		deallocate_data_blocks_level(file_del, del_blk_num, level - 1);
+	}
+	deallocate_block(file_del, blk_num);
+
+	free(scratch);
+
+	return 0;
+
+}
+
+int deallocate_data_blocks(file_ext2_t* file_del)
+{
+	int i;
+
+	inode_ext2_t* pinode = file_del->pinode;
+
+	for(i = 0; i < SI_INDEX; ++i)
+	{
+		uint32_t akt_blk = pinode->i_block[i];
+		deallocate_block(file_del, akt_blk);
+		pinode->i_block[i] = 0;
+	}
+	deallocate_data_blocks_level(file_del, pinode->i_block[SI_INDEX], 1);
+	pinode->i_block[SI_INDEX] = 0;
+	deallocate_data_blocks_level(file_del, pinode->i_block[DI_INDEX], 2);
+	pinode->i_block[DI_INDEX] = 0;
+	deallocate_data_blocks_level(file_del, pinode->i_block[TI_INDEX], 3);
+	pinode->i_block[TI_INDEX] = 0;
+
+	pinode->i_blocks = 0;
+	pinode->i_size = 0;
+
+	return 0;
+}
+
+int deallocate_inode(file_ext2_t* file_del)
+{
+
+	superblock_ext2_t* sb = file_del->sb;
+
+	uint32_t inode_index = file_del->inode_index;
+	uint32_t ext2_blocksize = GET_BLOCKSIZE_EXT2(sb);
+
+	uint32_t inode_index0 = inode_index - 1;
+
+	uint32_t inode_bgrp_index = inode_index0 / sb->s_inodes_per_group;
+	uint32_t inode_bgrp_local_index = inode_index0 % sb->s_inodes_per_group;
+
+	bg_desc_ext2_t akt_bgd;
+
+	read_bgdesc_ext2(file_del->dev_file, &akt_bgd, inode_bgrp_index);
+
+	uint32_t blk_num_inode_bitmap = akt_bgd.bg_inode_bitmap;
+
+	char* inode_bitmap = (char*) malloc(ext2_blocksize);
+
+	read_from_dev(file_del->dev_file, inode_bitmap, ext2_blocksize,
+			BLKNUM_TO_OFFSET(blk_num_inode_bitmap, ext2_blocksize));
+
+	uint32_t bit_akt = inode_bgrp_local_index;
+
+	ASSERT(test_bit(bit_akt, inode_bitmap));
+
+	reset_bit(bit_akt, inode_bitmap);
+
+	write_to_dev(file_del->dev_file, inode_bitmap, ext2_blocksize,
+			BLKNUM_TO_OFFSET(blk_num_inode_bitmap, ext2_blocksize));
+
+	int is_directory = file_del->pinode->i_mode & EXT2_S_IFDIR;
+
+	++akt_bgd.bg_free_inodes_count;
+
+	if (is_directory)
+	{
+		--akt_bgd.bg_used_dirs_count;
+	}
+
+	write_bgdesc_ext2(file_del->dev_file, &akt_bgd, inode_bgrp_index);
+
+	++sb->s_free_inodes_count;
+	sb->s_wtime = get_timestamp();
+
+	write_superblock_ext2(file_del->dev_file, sb);
+
+	free(inode_bitmap);
+
+	return 0;
+}
+
+int remove_file_ext2(file_ext2_t* file_del)
+{
+	inode_ext2_t* pinode = file_del->pinode;
+
+	deallocate_data_blocks(file_del);
+
+	uint32_t t_stamp = get_timestamp();
+
+	pinode->i_dtime = t_stamp;
+
+	memset(pinode, 0, sizeof(inode_ext2_t));
+
+	write_inode_ext2(file_del);
+
+	deallocate_inode(file_del);
+
+	return 0;
+}
+
 
 
 uint32_t blk_iterator_get_blk_index(blk_iterator_t *it)
@@ -1286,6 +1517,9 @@ int read_file_ext2(file_ext2_t* file, char* buf, uint32_t counta, uint32_t offse
 
 	}
 
+	file->pinode->i_atime = get_timestamp();
+	write_inode_ext2(file);
+
 	return nrd_total;
 }
 
@@ -1355,6 +1589,21 @@ int write_file_ext2(file_ext2_t* file, char* buf, uint32_t counta, uint32_t offs
 
 	}
 
+	uint32_t t_stamp = get_timestamp();
+
+	file->pinode->i_atime = t_stamp;
+	file->pinode->i_mtime = t_stamp;
+
+	uint32_t last_offset = file->it_lpos->offset;
+
+	if (last_offset > file->pinode->i_size)
+	{
+		file->pinode->i_size = last_offset;
+	}
+
+	write_inode_ext2(file);
+
+
 	return nwrt_total;
 
 }
@@ -1383,28 +1632,139 @@ int readdir_ext2(file_ext2_t* file, dir_entry_ext2_t* dir_entry,
 	return 0;
 }
 
-#define PPE2_FILE_FOUND	1
-#define PPE2_REG_FILE_FOUND	2
+int writedir_ext2(file_ext2_t* file, dir_entry_ext2_t* dir_entry, char* fname, uint32_t dir_offset)
+{
 
-int parse_path_ext2(file_ext2_t *file, char* path)
+	write_file_ext2(file, (char*)dir_entry, sizeof(dir_entry_ext2_t), dir_offset);
+
+	if (fname)
+	{
+		uint32_t name_len = dir_entry->name_len;
+		uint32_t rec_len = dir_entry->rec_len;
+		uint32_t buf_len = rec_len - sizeof(dir_entry_ext2_t);
+
+		char* aux_buf = malloc(buf_len);
+		memset(aux_buf, 0, buf_len);
+		memcpy(aux_buf, fname, name_len);
+
+		write_file_ext2(file, aux_buf, buf_len, dir_offset + sizeof(dir_entry_ext2_t));
+
+		free(aux_buf);
+	}
+
+	return 0;
+
+}
+
+int read_dir_entry_ext2(file_ext2_t* filp_dir, uint32_t offset, dir_entry_ext2_t* entry)
+{
+	int nrd = read_file_ext2(filp_dir, (char*) entry, sizeof(dir_entry_ext2_t), offset);
+
+	return 0;
+}
+
+int write_dir_entry_ext2(file_ext2_t* filp_dir, uint32_t offset, dir_entry_ext2_t* entry)
+{
+	int nwrt = write_file_ext2(filp_dir, (char*) entry, sizeof(dir_entry_ext2_t), offset);
+
+	return 0;
+}
+
+
+int lookup_name_in_dir_ext2(file_ext2_t* file_dir, char* fname,
+		dir_entry_ext2_t *found_entry, uint32_t* offset, uint32_t* offset_before)
 {
 	int retval = -1;
 
 	uint32_t dir_offset = 0;
 
+	char namebuf[EXT2_NAMELEN];
+
+	int found = 0;
+
+	*offset = dir_offset;
+	*offset_before = dir_offset;
+
+	while (dir_offset < file_dir->pinode->i_size)
+	{
+
+		*offset_before = *offset;
+		*offset = dir_offset;
+
+		int nrd = readdir_ext2(file_dir, found_entry, namebuf, &dir_offset);
+
+		if (!strcmp(namebuf, fname))
+		{
+				found = 1;
+				break;
+		}
+
+	}
+
+	if (found)
+	{
+		retval = 1;
+	}
+
+	ende:
+	return retval;
+}
+
+int lookup_last_in_dir_ext2(file_ext2_t *file_dir, dir_entry_ext2_t* last_entry, uint32_t* offset_last )
+{
+	int retval = -1;
+
+	uint32_t dir_offset = 0;
+
+	blk_iterator_next(file_dir->it_lpos, dir_offset);
+
+	char namebuf[EXT2_NAMELEN];
+
+	int nrd = -1;
+
+	uint32_t dir_size = file_dir->pinode->i_size;
+
+	*offset_last = dir_offset;
+
+	while (dir_offset < dir_size)
+	{
+		*offset_last = dir_offset;
+		nrd = readdir_ext2(file_dir, last_entry, namebuf, &dir_offset);
+
+	}
+
+	retval = 1;
+	ende:
+	return retval;
+
+}
+
+#define PPE_FLAG_LOOKUP_PREVIOUS		0x00000001
+
+
+int parse_path_ext2(file_ext2_t* file_pwd, uint32_t mode, char* path,
+		file_ext2_t *file, char* last_fname)
+{
+	int retval = -1;
+
 	dir_entry_ext2_t akt_entry;
+	dir_entry_ext2_t before_entry;
 
 	int argc;
 	char* argv[MAX_PATH_COMPONENTS];
 
-	char namebuf[128];
+	char namebuf[EXT2_NAMELEN];
 
 	int nlen = strlen(path);
 	char* path_copy = malloc(nlen + 1);
 	memcpy(path_copy, path, nlen + 1);
 
-	parse_buf(path, strlen(path), "/", &argc, argv);
+	parse_buf(path_copy, strlen(path), "/", &argc, argv);
 
+	if (argc > 0)
+	{
+		strcpy(last_fname, argv[argc-1]);
+	}
 
 	int i;
 
@@ -1418,37 +1778,30 @@ int parse_path_ext2(file_ext2_t *file, char* path)
 	file_ext2_t file_akt;
 	init_file_ext2(&file_akt, file->dev_file, file->sb);
 
-	read_inode_ext2(&file_akt, 2);
+	copy_file_ext2(&file_akt, file_pwd);
 
 	i = 0;
 
-	while (i < argc)
+	uint32_t goal = argc;
+
+	if (mode & PPE_FLAG_LOOKUP_PREVIOUS)
+	{
+		--goal;
+	}
+
+	while (i < goal)
 	{
 		int nrd = -1;
 		int found = 0;
 
-		dir_offset = 0;
+		//outb_printf("parse_path_ext2: argv[%d] = %s\n", i, argv[i]);
 
-		outb_printf("parse_path_ext2: argv[%d] = %s\n", i, argv[i]);
-		do
-		{
+		uint32_t akt_offset;
+		uint32_t before_offset;
 
-			uint32_t dir_offset_old = dir_offset;
+		found = lookup_name_in_dir_ext2(&file_akt, argv[i], &akt_entry, &akt_offset, &before_offset);
 
-			nrd = readdir_ext2(&file_akt, &akt_entry, namebuf, &dir_offset);
-
-			outb_printf("namebuf = >%s<\n", namebuf);
-
-			if (!strcmp(namebuf, argv[i]))
-			{
-					found = PPE2_FILE_FOUND;
-					break;
-			}
-
-		}
-		while(dir_offset < file_akt.pinode->i_size);
-
-		if (found)
+		if (found == 1)
 		{
 			uint32_t akt_inode_index = akt_entry.inode;
 
@@ -1458,7 +1811,6 @@ int parse_path_ext2(file_ext2_t *file, char* path)
 
 			if (file_akt.pinode->i_mode & EXT2_S_IFREG)
 			{
-				found = PPE2_REG_FILE_FOUND;
 				++i;
 				outb_printf("parse_path_ext2: regular file found.\n");
 				break;
@@ -1466,13 +1818,13 @@ int parse_path_ext2(file_ext2_t *file, char* path)
 		}
 		else
 		{
-			printf("parse_path_ext2: could not resolve %s at %s.\n", path_copy, argv[i]);
+			printf("parse_path_ext2: could not resolve %s at %s.\n", path, argv[i]);
 			goto ende;
 		}
 		++i;
 	}
 
-	if (i < argc)
+	if (i < goal)
 	{
 		printf("parse_path_ext2: is not a directory: %s\n", argv[i]);
 		goto ende;
@@ -1496,6 +1848,291 @@ ende:
 	return retval;
 }
 
+
+int create_dir_entry_ext2(file_ext2_t* filp_parent_directory, file_ext2_t* filp_new, char* fname)
+{
+
+	int retval = -1;
+
+	uint32_t ext2_blocksize = GET_BLOCKSIZE_EXT2(filp_parent_directory->sb);
+
+	// prepare new entry
+
+	dir_entry_ext2_t new_entry;
+
+	new_entry.inode = filp_new->inode_index;
+
+	uint16_t new_imode = filp_new->pinode->i_mode;
+
+	new_entry.file_type = new_imode & EXT2_S_IFREG ?
+			EXT2_FT_REG_FILE : new_imode & EXT2_S_IFDIR? EXT2_FT_DIR : EXT2_FT_UNKNOWN;
+
+	uint32_t fnamelen = strlen(fname);
+
+	if (fnamelen > EXT2_NAMELEN)
+	{
+		retval = -1;
+		goto ende;
+
+	}
+
+	new_entry.name_len = fnamelen;
+
+	uint16_t rec_len_prelim = sizeof(dir_entry_ext2_t) + fnamelen;
+
+	rec_len_prelim = align(rec_len_prelim, 4);
+
+	printf("fname = %s : rec_len_prelim = %d\n", fname, fnamelen);
+
+
+	// iterate through parent directory
+
+	dir_entry_ext2_t last_entry;
+	uint32_t offset_last;
+
+	lookup_last_in_dir_ext2(filp_parent_directory, &last_entry, &offset_last );
+	// last entry found
+	// append after it
+	// TODO: find fitting hole if possible before going to the end
+
+	uint32_t parent_dir_size = filp_parent_directory->pinode->i_size;
+
+	int dir_empty = !parent_dir_size;
+
+	uint32_t last_entry_real_len = 0;
+
+
+	// calculate start of new entry
+	// must be on a 4 byte boundary and entry must not cross ext2 block border
+
+	if (!dir_empty)
+	{
+		last_entry_real_len = sizeof(dir_entry_ext2_t) + last_entry.name_len;
+		last_entry_real_len = align(last_entry_real_len, 4);
+	}
+
+	uint32_t start_new_entry = offset_last + last_entry_real_len;
+
+	uint32_t start_new_entry1 = start_new_entry;
+
+	uint32_t rest_in_block = ext2_blocksize - start_new_entry1 % ext2_blocksize;
+
+	if (rest_in_block < rec_len_prelim)
+	{
+		start_new_entry1 += rest_in_block;
+	}
+
+	// rewrite rec_len of last entry
+
+	if (!dir_empty)
+	{
+		last_entry.rec_len = start_new_entry1 - offset_last;
+
+		int nwrt = writedir_ext2(filp_parent_directory, &last_entry, 0, offset_last);
+	}
+
+	// calculate the end of the new entry
+	// the end must fall together with the end of an ext2 block
+
+	uint32_t end_new_entry = start_new_entry1 + rec_len_prelim;
+
+	uint32_t end_new_entry1 = align(max(end_new_entry, parent_dir_size), ext2_blocksize);
+
+	new_entry.rec_len = end_new_entry1 - start_new_entry1;
+
+	// now write the new directory entry
+
+	int nwrt = writedir_ext2(filp_parent_directory, &new_entry, fname, start_new_entry1);
+
+
+	++filp_new->pinode->i_links_count;
+	write_inode_ext2(filp_new);
+
+
+	retval = 0;
+
+	ende:
+	return retval;
+
+}
+
+
+// filp_new_file is only rawly filled with dev_file and sb
+// it gets filled in allocate_new_inode
+int create_file_ext2(file_ext2_t* filp_parent_dir,
+		file_ext2_t *filp_new_file, char* fname, uint16_t imode, uint32_t iflags)
+{
+
+	int retval = -1;
+
+	retval = allocate_new_inode(filp_new_file, filp_parent_dir->pbgd_index, imode, iflags);
+	if (retval < 0)
+	{
+		goto ende;
+	};
+
+	retval = create_dir_entry_ext2(filp_parent_dir, filp_new_file, fname);
+
+	ende:
+	return retval;
+}
+
+// filp_new_file is only rawly filled with dev_file and sb
+// it gets filled in allocate_new_inode
+int create_directory_ext2(file_ext2_t* filp_parent_dir,
+		file_ext2_t *filp_new_dir, char* fname, uint16_t imode, uint32_t iflags)
+{
+
+	int retval = -1;
+
+	imode |= EXT2_S_IFDIR;
+	imode &= ~EXT2_S_IFREG;
+
+	retval = allocate_new_inode(filp_new_dir, filp_parent_dir->pbgd_index, imode, iflags);
+	if (retval < 0)
+	{
+		goto ende;
+	};
+
+	retval = create_dir_entry_ext2(filp_parent_dir, filp_new_dir, fname);
+	if (retval < 0)
+	{
+		goto ende;
+	}
+
+	retval = create_dir_entry_ext2(filp_new_dir, filp_new_dir, ".");
+	retval = create_dir_entry_ext2(filp_new_dir, filp_parent_dir, "..");
+
+	ende:
+	return retval;
+}
+
+
+int unlink_file_ext2(file_ext2_t* filp_dir, char* fname)
+{
+	int retval = -1;
+
+	dir_entry_ext2_t akt_entry;
+	dir_entry_ext2_t before_entry;
+
+	uint32_t akt_offset = 0;
+	uint32_t before_offset = 0;
+
+	int found = lookup_name_in_dir_ext2(filp_dir, fname, &akt_entry, &akt_offset, &before_offset);
+
+	if (found != 1)
+	{
+		goto ende;
+	}
+
+	int is_first = (akt_offset == before_offset);
+
+	if (!is_first)
+	{
+		dir_entry_ext2_t before_entry;
+		read_dir_entry_ext2(filp_dir, before_offset, &before_entry);
+		before_entry.rec_len += akt_entry.rec_len;
+		write_dir_entry_ext2(filp_dir, before_offset, &before_entry);
+	}
+
+	uint32_t del_inode = akt_entry.inode;
+
+	file_ext2_t file_del;
+	init_file_ext2(&file_del, filp_dir->dev_file, filp_dir->sb);
+
+	read_inode_ext2(&file_del, del_inode);
+
+	if (! --file_del.pinode->i_links_count)
+	{
+		remove_file_ext2(&file_del);
+		read_inode_ext2(filp_dir, filp_dir->inode_index);
+	}
+	else
+	{
+		//outb_printf("unlink_file_ext2: file_del inode = %d file_del i_links_count = %d\n",
+		//		file_del.inode_index, file_del.pinode->i_links_count);
+		write_inode_ext2(&file_del);
+
+		//read_inode_ext2(&file_del, file_del.inode_index);
+		//outb_printf(
+		//		"unlink_file_ext2: read after write:file_del inode = %d file_del i_links_count = %d\n",
+		//		file_del.inode_index, file_del.pinode->i_links_count);
+
+		read_inode_ext2(filp_dir, filp_dir->inode_index);
+
+	}
+
+	destroy_file_ext2(&file_del);
+
+	akt_entry.inode = 0;
+
+	write_dir_entry_ext2(filp_dir, akt_offset, &akt_entry);
+
+	retval = 0;
+	ende:
+	return retval;
+}
+
+int delete_directory_ext2(file_ext2_t* filp_dir, char* fname)
+{
+	int retval = -1;
+
+	dir_entry_ext2_t del_entry;
+	uint32_t offset;
+	uint32_t offset_before;
+
+	int found = lookup_name_in_dir_ext2(filp_dir, fname, &del_entry, &offset, &offset_before);
+
+	if (found != 1)
+	{
+		goto ende;
+	}
+
+	file_ext2_t f_del_dir;
+	init_file_ext2(&f_del_dir, filp_dir->dev_file, filp_dir->sb);
+
+	read_inode_ext2(&f_del_dir, del_entry.inode);
+
+	dir_entry_ext2_t last_entry;
+
+	uint32_t offset_last;
+
+	lookup_last_in_dir_ext2(&f_del_dir, &last_entry, &offset_last);
+
+	if (offset_last == sizeof(dir_entry_ext2_t) + 4)
+	{
+		unlink_file_ext2(&f_del_dir, "..");
+		unlink_file_ext2(&f_del_dir, ".");
+	}
+	else
+	{
+		retval = -1;
+		goto ende;
+	}
+
+	//read_inode_ext2(&f_del_dir, f_del_dir.inode_index);
+
+	//outb_printf("delete_directory_ext2: after read: inode = %d links_count = %d\n",
+	//		f_del_dir.inode_index, f_del_dir.pinode->i_links_count);
+
+	read_inode_ext2(filp_dir, filp_dir->inode_index);
+
+	//outb_printf("delete_directory_ext2: filp_dir: inode = %d links_count = %d\n",
+	//		filp_dir->inode_index, filp_dir->pinode->i_links_count);
+
+
+	unlink_file_ext2(filp_dir, fname);
+
+	--filp_dir->pbgd->bg_used_dirs_count;
+	write_bgdesc_ext2(filp_dir->dev_file, filp_dir->pbgd, filp_dir->pbgd_index);
+
+	ende:
+	destroy_file_ext2(&f_del_dir);
+	return retval;
+}
+
+
+
 int display_directory_ext2(file_ext2_t* file)
 {
 
@@ -1504,9 +2141,8 @@ int display_directory_ext2(file_ext2_t* file)
 	blk_iterator_next(file->it_lpos, dir_offset);
 
 	dir_entry_ext2_t akt_entry;
-	inode_ext2_t aux_inode;
 
-	char namebuf[128];
+	char namebuf[EXT2_NAMELEN];
 
 	int nrd = -1;
 
@@ -1648,48 +2284,110 @@ int test_ext2_write(file_t* dev_file, superblock_ext2_t* sb, int no_runs)
 	file_ext2_t file_testc;
 	init_file_ext2(&file_testc, dev_file, sb);
 
+	file_ext2_t file_dir_testdir;
+	init_file_ext2(&file_dir_testdir, dev_file, sb);
 
-	parse_path_ext2(&file_testa, "/testa");
-	parse_path_ext2(&file_testb, "/testb");
-	parse_path_ext2(&file_testc, "/testc");
+	file_ext2_t f_root_dir;
+	init_file_ext2(&f_root_dir, dev_file, sb);
 
-	uint8_t* auxbuf = 0;
-	alloc_if_empty((char**)&auxbuf, 17 * 1024);
+	read_inode_ext2(&f_root_dir, 2);
 
-	int runs = no_runs;
-	int i;
+	create_directory_ext2(&f_root_dir, &file_dir_testdir, "testdir", 0755, 0);
 
-	int upper_limit = 512 * 1024 + 37;
-	int write_limit = 16 * 1024 + 19;
+	uint16_t access_mode = 0644;
+	uint16_t file_mode = access_mode | EXT2_S_IFREG;
 
-	for(i = 0; i < runs; ++i)
+
+	int creat_del_loops = 1;
+
+	while (creat_del_loops >= 0)
 	{
-		int wrt_end;
-		int wrt_len;
-		while (!(wrt_end = (rand() % upper_limit)));
-		while (!(wrt_len = (rand() % write_limit)));
 
-		int wrt_start = max(wrt_end - wrt_len + 1, 0);
-		wrt_len = wrt_end - wrt_start + 1;
+		init_file_ext2(&file_testa, dev_file, sb);
+		init_file_ext2(&file_testb, dev_file, sb);
+		init_file_ext2(&file_testc, dev_file, sb);
 
-		ASSERT(wrt_len <= write_limit);
+		create_file_ext2(&f_root_dir, &file_testa, "newtesta", file_mode, 0);
+		create_file_ext2(&f_root_dir, &file_testb, "newtestb", file_mode, 0);
+		create_file_ext2(&f_root_dir, &file_testc, "newtestc", file_mode, 0);
 
-		int j = 0;
-		for(j = 0; j < wrt_len; ++j)
+
+#if 0
+		parse_path_ext2(&file_testa, "/testa");
+		parse_path_ext2(&file_testb, "/testb");
+		parse_path_ext2(&file_testc, "/testc");
+#endif
+
+#if 1
+		uint8_t* auxbuf = 0;
+		alloc_if_empty((char**)&auxbuf, 17 * 1024);
+
+		int runs = no_runs;
+		int i;
+
+		int upper_limit = 512 * 1024 + 37;
+		int write_limit = 16 * 1024 + 19;
+
+		for(i = 0; i < runs; ++i)
 		{
-			auxbuf[j] = rand() % sizeof(uint8_t);
+			int wrt_end;
+			int wrt_len;
+			while (!(wrt_end = (rand() % upper_limit)));
+			while (!(wrt_len = (rand() % write_limit)));
+
+			int wrt_start = max(wrt_end - wrt_len + 1, 0);
+			wrt_len = wrt_end - wrt_start + 1;
+
+			ASSERT(wrt_len <= write_limit);
+
+			int j = 0;
+			for(j = 0; j < wrt_len; ++j)
+			{
+				auxbuf[j] = rand() % 256;
+			}
+			int nwrt;
+			nwrt = write_file_ext2(&file_testa, (char*) auxbuf, wrt_len, wrt_start);
+			ASSERT(nwrt = wrt_len);
+
+			nwrt = write_file_ext2(&file_testb, (char*) auxbuf, wrt_len, wrt_start);
+			ASSERT(nwrt = wrt_len);
+
+			nwrt = write_file_ext2(&file_testc, (char*) auxbuf, wrt_len, wrt_start);
+			ASSERT(nwrt = wrt_len);
+
 		}
-		int nwrt;
-		nwrt = write_file_ext2(&file_testa, (char*) auxbuf, wrt_len, wrt_start);
-		ASSERT(nwrt = wrt_len);
 
-		nwrt = write_file_ext2(&file_testb, (char*) auxbuf, wrt_len, wrt_start);
-		ASSERT(nwrt = wrt_len);
+#endif
 
-		nwrt = write_file_ext2(&file_testc, (char*) auxbuf, wrt_len, wrt_start);
-		ASSERT(nwrt = wrt_len);
+		if (creat_del_loops > 0)
+		{
+			printf("deleting: creat_del_loops = %d\n", creat_del_loops);
 
+			unlink_file_ext2(&f_root_dir, "newtesta");
+			unlink_file_ext2(&f_root_dir, "newtestb");
+			unlink_file_ext2(&f_root_dir, "newtestc");
+
+		}
+
+		destroy_file_ext2(&file_testa);
+		destroy_file_ext2(&file_testb);
+		destroy_file_ext2(&file_testc);
+
+
+		--creat_del_loops;
 	}
+
+	ende:
+
+	destroy_file_ext2(&f_root_dir);
+
+#if 0
+	destroy_file_ext2(&file_testa);
+	destroy_file_ext2(&file_testb);
+	destroy_file_ext2(&file_testc);
+#endif
+
+	destroy_file_ext2(&file_dir_testdir);
 
 	return 0;
 

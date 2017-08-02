@@ -12,8 +12,34 @@
 
 #define AUX_BLOCK_SIZE	4096
 
-#define EXT2_S_IFDIR	0x4000
+
+#define EXT2_S_IFSOCK	0xC000
+#define EXT2_S_IFLNK	0xA000
 #define EXT2_S_IFREG	0x8000
+#define EXT2_S_IFBLK	0x6000
+#define EXT2_S_IFDIR	0x4000
+#define EXT2_S_IFCHR	0x2000
+#define EXT2_S_IFIFO	0x1000
+
+#define EXT2_S_IRUSR	0x0100
+#define EXT2_S_IWUSR	0x0080
+#define EXT2_S_IXUSR	0x0040
+#define EXT2_S_IRGRP	0x0020
+#define EXT2_S_IWGRP	0x0010
+#define EXT2_S_IXGRP	0x0008
+#define EXT2_S_IROTH	0x0004
+#define EXT2_S_IWOTH	0x0002
+#define EXT2_S_IXOTH	0x0001
+
+#define EXT2_FT_UNKNOWN		0
+#define EXT2_FT_REG_FILE	1
+#define EXT2_FT_DIR				2
+
+#define EXT2_NAMELEN		255
+
+
+
+
 
 #define SI_INDEX	12
 #define DI_INDEX	13
@@ -211,8 +237,9 @@ int readdir_ext2(file_ext2_t* file, dir_entry_ext2_t* dir_entry,
 int read_file_ext2(file_ext2_t* file, char* buf, uint32_t counta, uint32_t offseta);
 int write_file_ext2(file_ext2_t* file, char* buf, uint32_t counta, uint32_t offseta);
 
+int parse_path_ext2(file_ext2_t* file_pwd, uint32_t mode, char* path,
+		file_ext2_t *file, char* last_fname);
 
-int parse_path_ext2(file_ext2_t* file, char* path);
 
 int get_indirect_blocks(uint32_t offset, uint32_t* index_arr, uint32_t *mode);
 int test_get_indirect_blocks();

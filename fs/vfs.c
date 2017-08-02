@@ -582,6 +582,8 @@ void test_read_write(file_t* dev_file)
 	free(buf1);
 }
 
+static file_ext2_t file_pwd;
+
 
 int execute_bgd(int argc, char* argv[])
 {
@@ -598,6 +600,15 @@ int execute_bgd(int argc, char* argv[])
 	uint32_t bg_index = atoi(argv[1]);
 	read_bgdesc_ext2(dev_ide1, &bgd, bg_index);
 	print_bgdesc_ext2(&bgd);
+
+	uint32_t first_bit = get_first_data_block_pos_in_block_group_bitmap(bg_index, gsb_ext2, &bgd);
+	uint32_t last_bit = get_last_data_block_pos_in_block_group_bitmap(bg_index, gsb_ext2, &bgd);
+
+	uint32_t first_data_blk = get_first_data_block_in_block_group(&bgd, gsb_ext2);
+
+	printf("first data block = %d\n", first_data_blk);
+	printf("first data bit in data block bitmap = %d\n", first_bit);
+	printf("last data bit in data block bitmap = %d\n", last_bit);
 
 ende:
 	return retval;
@@ -624,7 +635,6 @@ int execute_ext2_write_test(int argc, char* argv[])
 
 int execute_cat(int argc, char* argv[])
 {
-	file_t* dev_ide1 = &fixed_file_list[DEV_IDE+1];
 
 	if (argc < 2)
 	{
@@ -633,9 +643,11 @@ int execute_cat(int argc, char* argv[])
 	}
 
 	file_ext2_t file;
-	init_file_ext2(&file, dev_ide1, gsb_ext2);
+	init_file_ext2(&file, file_pwd.dev_file, file_pwd.sb);
 
-	int ret = parse_path_ext2(&file, argv[1]);
+	char last_fname[EXT2_NAMELEN];
+
+	int ret = parse_path_ext2(&file_pwd, 0, argv[1], &file, last_fname);
 
 	if (ret >= 0)
 	{
@@ -645,6 +657,99 @@ int execute_cat(int argc, char* argv[])
 	destroy_file_ext2(&file);
 	return 0;
 }
+
+int execute_cd(int argc, char* argv[])
+{
+
+	if (argc < 2)
+	{
+		printf("usage: cd <pathname>\n");
+		return -1;
+	}
+
+	file_ext2_t file;
+	init_file_ext2(&file, file_pwd.dev_file, file_pwd.sb);
+
+	char last_fname[EXT2_NAMELEN];
+
+	int ret = parse_path_ext2(&file_pwd, 0, argv[1], &file, last_fname);
+
+	copy_file_ext2(&file_pwd, &file);
+
+	destroy_file_ext2(&file);
+	return 0;
+}
+
+int execute_mkdir(int argc, char* argv[])
+{
+
+	if (argc < 2)
+	{
+		printf("usage: mkdir <pathname>\n");
+		return -1;
+	}
+
+	file_ext2_t file;
+	init_file_ext2(&file, file_pwd.dev_file, file_pwd.sb);
+
+	char last_fname[EXT2_NAMELEN];
+
+	int ret = parse_path_ext2(&file_pwd, 1, argv[1], &file, last_fname);
+
+	file_ext2_t filp_new_dir;
+	init_file_ext2(&filp_new_dir, file.dev_file, file.sb);
+
+	create_directory_ext2(&file, &filp_new_dir, last_fname, 0755, 0);
+
+	destroy_file_ext2(&file);
+	return 0;
+}
+
+
+int execute_rmdir(int argc, char* argv[])
+{
+	if (argc < 2)
+	{
+		printf("usage: rmdir <pathname>\n");
+		return -1;
+	}
+
+	file_ext2_t file;
+	init_file_ext2(&file, file_pwd.dev_file, file_pwd.sb);
+
+	char last_fname[EXT2_NAMELEN];
+
+	int ret = parse_path_ext2(&file_pwd, 1, argv[1], &file, last_fname);
+
+	delete_directory_ext2(&file, last_fname);
+
+	destroy_file_ext2(&file);
+	return 0;
+}
+
+int execute_rm(int argc, char* argv[])
+{
+
+	if (argc < 2)
+	{
+		printf("usage: rm <pathname>\n");
+		return -1;
+	}
+
+	file_ext2_t file;
+	init_file_ext2(&file, file_pwd.dev_file, file_pwd.sb);
+
+	char last_fname[EXT2_NAMELEN];
+
+	int ret = parse_path_ext2(&file_pwd, 1, argv[1], &file, last_fname);
+
+	unlink_file_ext2(&file, last_fname);
+
+	destroy_file_ext2(&file);
+	return 0;
+}
+
+
 
 int execute_ino(int argc, char* argv[1])
 {
@@ -719,6 +824,10 @@ exec_struct_t my_commands[] = { {"cat", execute_cat},
 																	{"tst", execute_tst},
 																	{"bgd", execute_bgd},
 																	{"ino", execute_ino},
+																	{"cd", execute_cd},
+																	{"mkdir", execute_mkdir},
+																	{"rm", execute_rm},
+																	{"rmdir", execute_rmdir},
 																	{"dotst", execute_ext2_write_test}};
 
 
@@ -744,12 +853,19 @@ int main(int argc, char* argv[])
 
 	init_ext2_system(dev_ide1);
 
+	init_file_ext2(&file_pwd, dev_ide1, gsb_ext2);
+
+	// file_pwd becomes root dir
+	read_inode_ext2(&file_pwd, 2);
+
 	char *buf;
 
 	while ((buf = readline("> ")) != NULL) {
 		if (strlen(buf) > 0) {
 			add_history(buf);
 		}
+
+		read_inode_ext2(&file_pwd, file_pwd.inode_index);
 
 		char buffer[4096];
 

@@ -25,7 +25,7 @@ int outb_printf(char* format, ... )
 
 if (OUTB_PRINTF_ON)
 {
-	printf("\n**** outb_printf: %s", buffer);
+	printf("\noutb_printf: %s", buffer);
 }
 
 }
