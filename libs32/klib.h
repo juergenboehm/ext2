@@ -11,6 +11,8 @@
 //#define	MAX_INT			((int)(~(unsigned int)(1 << (sizeof(int) - 1))))
 //#define MAX_UINT    (~((unsigned int)(0)))
 
+int outb_printf(char* format, ... );
+
 
 void parse_buf(char* buf, int len, char* delims, int* argc, char* argv[]);
 

@@ -10,8 +10,6 @@
 
 int outb_printf(char* format, ... )
 {
-	int i = 0;
-	char* p = format;
 
 	char buffer[PRINTF_BUFFER_LEN];
 
@@ -19,7 +17,7 @@ int outb_printf(char* format, ... )
 
 	va_start(ap, format);
 
-	vsprintf(buffer, format, ap);
+	int nn = vsprintf(buffer, format, ap);
 
 	va_end(ap);
 
@@ -28,6 +26,7 @@ if (OUTB_PRINTF_ON)
 	printf("\noutb_printf: %s", buffer);
 }
 
+	return nn;
 }
 
 

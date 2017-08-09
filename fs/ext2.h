@@ -230,6 +230,14 @@ int read_bgdesc_ext2(file_t* dev_file, bg_desc_ext2_t* pbgd, uint32_t bg_index);
 
 int write_inode_ext2(file_ext2_t* filp);
 
+inline uint32_t get_first_data_block_pos_in_block_group_bitmap(uint32_t bgd_index,
+		superblock_ext2_t* sb, bg_desc_ext2_t* pbgd);
+
+inline uint32_t get_last_data_block_pos_in_block_group_bitmap(uint32_t bgd_index,
+		superblock_ext2_t *sb, bg_desc_ext2_t *pbgd);
+inline uint32_t get_first_data_block_in_block_group(bg_desc_ext2_t* pbgd, superblock_ext2_t* sb);
+
+
 
 
 int readdir_ext2(file_ext2_t* file, dir_entry_ext2_t* dir_entry,
@@ -243,6 +251,18 @@ int parse_path_ext2(file_ext2_t* file_pwd, uint32_t mode, char* path,
 
 int get_indirect_blocks(uint32_t offset, uint32_t* index_arr, uint32_t *mode);
 int test_get_indirect_blocks();
+
+
+int create_file_ext2(file_ext2_t* filp_parent_dir,
+		file_ext2_t *filp_new_file, char* fname, uint16_t imode, uint32_t iflags);
+
+int create_directory_ext2(file_ext2_t* filp_parent_dir,
+		file_ext2_t *filp_new_dir, char* fname, uint16_t imode, uint32_t iflags);
+
+int delete_directory_ext2(file_ext2_t* filp_dir, char* fname);
+
+int unlink_file_ext2(file_ext2_t* filp_dir, char* fname);
+
 
 
 int display_directory_ext2(file_ext2_t *file);

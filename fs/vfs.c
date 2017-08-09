@@ -125,7 +125,7 @@ int ddriv_release(inode_t* inode, file_t* fil)
 		ret = pfops->release(inode, fil);
 	}
 
-	return -1;
+	return ret;
 }
 
 int ddriv_readdir(file_t* file, void* dirent, filldir_t filldir)
@@ -136,7 +136,7 @@ int ddriv_readdir(file_t* file, void* dirent, filldir_t filldir)
 //TO DO: test the code, first test done
 int ddriv_read_blk(file_t* fil, char* buf, size_t count, size_t* offset)
 {
-	int ret = -1;
+	//int ret = -1;
 
 	uint32_t dev_major = GET_MAJOR_DEVICE_NUMBER(fil->f_dentry->d_inode->i_device);
 	device_driver_t* pdd = &dev_drv_table[dev_major];
@@ -199,7 +199,7 @@ ende:
 //TO DO: test the code, doing first test
 int ddriv_write_blk(file_t* fil, char* buf, size_t count, size_t* offset)
 {
-	int ret = -1;
+	//int ret = -1;
 
 	uint32_t dev_major = GET_MAJOR_DEVICE_NUMBER(fil->f_dentry->d_inode->i_device);
 	device_driver_t* pdd = &dev_drv_table[dev_major];
@@ -434,7 +434,7 @@ void test_read_write(file_t* dev_file)
 
 	uint32_t offset_a = 19;
 
-	uint32_t key;
+	//uint32_t key;
 
 	printf("test_read: len1 = %d len2 = %d\n", len1, len2);
 
@@ -455,7 +455,7 @@ void test_read_write(file_t* dev_file)
 
 	size_t offs;
 
-	size_t loffs = 0;
+	//size_t loffs = 0;
 
 	uint32_t cnt1 = offset_a;
 	uint32_t cnt2 = 0;
@@ -658,6 +658,55 @@ int execute_cat(int argc, char* argv[])
 	return 0;
 }
 
+int execute_cp(int argc, char* argv[])
+{
+	if (argc < 3)
+	{
+		printf("usage: cp <path_to_file> <filename>\n");
+		return -1;
+	}
+
+	file_ext2_t file_rootdir;
+	init_file_ext2(&file_rootdir, file_pwd.dev_file, file_pwd.sb);
+
+	read_inode_ext2(&file_rootdir, 2);
+
+	file_ext2_t file_in;
+	init_file_ext2(&file_in, file_pwd.dev_file, file_pwd.sb);
+
+	char last_fname[EXT2_NAMELEN];
+
+	int ret = parse_path_ext2(&file_rootdir, 0, argv[1], &file_in, last_fname);
+
+	if (ret >= 0)
+	{
+		file_ext2_t filp_new_file;
+		init_file_ext2(&filp_new_file, file_pwd.dev_file, file_pwd.sb);
+
+		create_file_ext2(&file_pwd, &filp_new_file, argv[2], EXT2_S_IFREG | 0644, 0);
+
+		uint32_t size_infile = file_in.pinode->i_size;
+
+		char* file_buf = malloc(size_infile);
+
+		read_file_ext2(&file_in, file_buf, size_infile, 0);
+
+		write_file_ext2(&filp_new_file, file_buf, size_infile, 0);
+
+		free(file_buf);
+
+		destroy_file_ext2(&filp_new_file);
+	}
+
+	destroy_file_ext2(&file_in);
+
+	destroy_file_ext2(&file_rootdir);
+
+
+
+	return 0;
+}
+
 int execute_cd(int argc, char* argv[])
 {
 
@@ -676,8 +725,14 @@ int execute_cd(int argc, char* argv[])
 
 	copy_file_ext2(&file_pwd, &file);
 
+	FILE* fd = fopen("lastdir.cd", "w");
+
+	fprintf(fd, "cd %s\n", argv[1]);
+
+	fclose(fd);
+
 	destroy_file_ext2(&file);
-	return 0;
+	return ret;
 }
 
 int execute_mkdir(int argc, char* argv[])
@@ -702,7 +757,8 @@ int execute_mkdir(int argc, char* argv[])
 	create_directory_ext2(&file, &filp_new_dir, last_fname, 0755, 0);
 
 	destroy_file_ext2(&file);
-	return 0;
+	destroy_file_ext2(&filp_new_dir);
+	return ret;
 }
 
 
@@ -724,7 +780,7 @@ int execute_rmdir(int argc, char* argv[])
 	delete_directory_ext2(&file, last_fname);
 
 	destroy_file_ext2(&file);
-	return 0;
+	return ret;
 }
 
 int execute_rm(int argc, char* argv[])
@@ -746,7 +802,7 @@ int execute_rm(int argc, char* argv[])
 	unlink_file_ext2(&file, last_fname);
 
 	destroy_file_ext2(&file);
-	return 0;
+	return ret;
 }
 
 
@@ -802,7 +858,7 @@ int execute_rd(int argc, char* argv[])
 	dev_ide->f_fops->llseek(dev_ide, offset, 0);
 	dev_ide->f_fops->read(dev_ide, blk_buf, IDE_BLKSIZE, &dummy_offs);
 
-	display_buffer(blk_buf, IDE_BLKSIZE);
+	display_buffer((uint8_t*)blk_buf, IDE_BLKSIZE);
 	return 0;
 }
 
@@ -828,6 +884,7 @@ exec_struct_t my_commands[] = { {"cat", execute_cat},
 																	{"mkdir", execute_mkdir},
 																	{"rm", execute_rm},
 																	{"rmdir", execute_rmdir},
+																	{"cp", execute_cp},
 																	{"dotst", execute_ext2_write_test}};
 
 
@@ -843,12 +900,67 @@ void dispatch_op(exec_struct_t *commands, int ncommands, int argc, char* argv[])
 	}
 }
 
+int do_cmdline(int argc, char* argv[])
+{
+	int i;
+	for(i = 1; i < argc; ++i)
+	{
+		argv[i-1] = argv[i];
+	}
+	--argc;
+
+	printf("**>");
+	for(i = 0; i < argc; ++i)
+	{
+		printf("%s ", argv[i]);
+	}
+	printf("\n");
+
+	// argv[0] is not equal "cd"
+	if (strcmp(argv[0], "cd"))
+	{
+		FILE* fd;
+		if ((fd = fopen("lastdir.cd", "r")))
+		{
+			char buf[256];
+			int argc_cd;
+			char* argv_cd[32];
+			fgets(buf, 256, fd);
+			fclose(fd);
+			int i;
+			for(i = 0; i < 256; ++i)
+			{
+				if (buf[i] == '\n')
+				{
+					buf[i] = 0;
+				}
+			}
+
+			printf("lastdir.cd: content = %s\n", buf);
+
+			parse_buf(buf, 256, " ", &argc_cd, argv_cd);
+			for(i = 0; i < argc_cd; ++i)
+			{
+				printf("lastdir.cd: argv[%d] = >%s<\n", i, argv_cd[i]);
+			}
+			dispatch_op(my_commands, sizeof(my_commands)/sizeof(my_commands[0]), argc_cd, argv_cd);
+		}
+	}
+
+	dispatch_op(my_commands, sizeof(my_commands)/sizeof(my_commands[0]), argc, argv);
+
+
+
+	return 0;
+
+}
+
 
 int main(int argc, char* argv[])
 {
 	init_base_files();
 
-	file_t* dev_ide = &fixed_file_list[DEV_IDE];
+	//file_t* dev_ide = &fixed_file_list[DEV_IDE];
 	file_t* dev_ide1 = &fixed_file_list[DEV_IDE + 1];
 
 	init_ext2_system(dev_ide1);
@@ -857,6 +969,13 @@ int main(int argc, char* argv[])
 
 	// file_pwd becomes root dir
 	read_inode_ext2(&file_pwd, 2);
+
+	if (argc > 1)
+	{
+		do_cmdline(argc, argv);
+		close(hdd_fd);
+		return 0;
+	}
 
 	char *buf;
 

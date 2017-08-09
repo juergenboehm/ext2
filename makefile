@@ -3,7 +3,7 @@
 # the global debug level
 DEB_LEVEL = 0
 
-ccflags = -c -DDEBUG_LEVEL=${DEB_LEVEL} -g -O0 -Werror
+ccflags = -c -DDEBUG_LEVEL=${DEB_LEVEL} -g -O0 -Werror -Wall
 ccflagsS = $(ccflags) -DASM_SOURCE=1
 
 ldflags = -lc -lreadline

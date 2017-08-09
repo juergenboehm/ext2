@@ -45,7 +45,7 @@ void init_file_ops_line(file_ops_t *pddops,
 
 int readblk_ide(file_t* fil, uint32_t blk_index, char **buf)
 {
-	uint32_t dev_major = GET_MAJOR_DEVICE_NUMBER(fil->f_dentry->d_inode->i_device);
+	//uint32_t dev_major = GET_MAJOR_DEVICE_NUMBER(fil->f_dentry->d_inode->i_device);
 	uint32_t dev_minor = GET_MINOR_DEVICE_NUMBER(fil->f_dentry->d_inode->i_device);
 
 	if (!*buf)
@@ -89,6 +89,8 @@ int readblk_ide(file_t* fil, uint32_t blk_index, char **buf)
 
 	}
 
+	return ret;
+
 }
 
 int writeblk_ide(file_t* fil, uint32_t blk_index, char *buf)
@@ -96,7 +98,7 @@ int writeblk_ide(file_t* fil, uint32_t blk_index, char *buf)
 	//printf("writeblk_ide: blk_index = %d\n", blk_index);
 
 	int ret;
-	uint32_t dev_major = GET_MAJOR_DEVICE_NUMBER(fil->f_dentry->d_inode->i_device);
+	//uint32_t dev_major = GET_MAJOR_DEVICE_NUMBER(fil->f_dentry->d_inode->i_device);
 	uint32_t dev_minor = GET_MINOR_DEVICE_NUMBER(fil->f_dentry->d_inode->i_device);
 
 	if (dev_minor == 0)
