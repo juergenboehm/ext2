@@ -1830,6 +1830,9 @@ ende:
 	return retval;
 }
 
+#define CDE_NULL_INODE_FOUND	1
+#define CDE_NON_NULL_INODE_FOUND	2
+
 
 int create_dir_entry_ext2(file_ext2_t* filp_parent_directory, file_ext2_t* filp_new, char* fname)
 {
@@ -1872,10 +1875,51 @@ int create_dir_entry_ext2(file_ext2_t* filp_parent_directory, file_ext2_t* filp_
 	dir_entry_ext2_t last_entry;
 	uint32_t offset_last;
 
-	lookup_last_in_dir_ext2(filp_parent_directory, &last_entry, &offset_last );
-	// last entry found
-	// append after it
-	// TODO: find fitting hole if possible before going to the end
+	uint32_t dir_offset = 0;
+
+	blk_iterator_next(filp_parent_directory->it_lpos, dir_offset);
+
+	char namebuf[EXT2_NAMELEN];
+
+	uint32_t dir_size = filp_parent_directory->pinode->i_size;
+
+	offset_last = dir_offset;
+
+	uint16_t last_entry_necess_len = 0;
+	uint16_t last_entry_free_space = 0;
+
+	uint16_t last_entry_rec_len = 0;
+
+	int space_found = 0;
+
+	while (dir_offset < dir_size)
+	{
+		offset_last = dir_offset;
+		readdir_ext2(filp_parent_directory, &last_entry, namebuf, &dir_offset);
+
+		last_entry_rec_len = last_entry.rec_len;
+
+		if (!last_entry.inode)
+		{
+			last_entry_necess_len = 0;
+			last_entry_free_space = last_entry.rec_len;
+		}
+		else
+		{
+			last_entry_necess_len = sizeof(dir_entry_ext2_t) + last_entry.name_len;
+			last_entry_necess_len = align(last_entry_necess_len, 4);
+			last_entry_free_space = last_entry.rec_len - last_entry_necess_len;
+		}
+
+		if (last_entry_free_space >= rec_len_prelim)
+		{
+			space_found = !last_entry.inode ? CDE_NULL_INODE_FOUND : CDE_NON_NULL_INODE_FOUND;
+			break;
+		}
+
+
+	}
+
 
 	uint32_t parent_dir_size = filp_parent_directory->pinode->i_size;
 
@@ -1887,26 +1931,38 @@ int create_dir_entry_ext2(file_ext2_t* filp_parent_directory, file_ext2_t* filp_
 	// calculate start of new entry
 	// must be on a 4 byte boundary and entry must not cross ext2 block border
 
-	if (!dir_empty)
+	uint32_t start_new_entry1;
+
+	if (space_found)
 	{
-		last_entry_real_len = sizeof(dir_entry_ext2_t) + last_entry.name_len;
-		last_entry_real_len = align(last_entry_real_len, 4);
+		start_new_entry1 = offset_last + last_entry_necess_len;
 	}
-
-	uint32_t start_new_entry = offset_last + last_entry_real_len;
-
-	uint32_t start_new_entry1 = start_new_entry;
-
-	uint32_t rest_in_block = ext2_blocksize - start_new_entry1 % ext2_blocksize;
-
-	if (rest_in_block < rec_len_prelim)
+	else
 	{
-		start_new_entry1 += rest_in_block;
-	}
+		// space not found
+		// last_entry is really the *last* entry in directory (if not dir_empty)
 
+		if (!dir_empty)
+		{
+			last_entry_real_len = sizeof(dir_entry_ext2_t) + last_entry.name_len;
+			last_entry_real_len = align(last_entry_real_len, 4);
+		}
+
+		uint32_t start_new_entry = offset_last + last_entry_real_len;
+
+		start_new_entry1 = start_new_entry;
+
+		uint32_t rest_in_block = ext2_blocksize - start_new_entry1 % ext2_blocksize;
+
+		if (rest_in_block < rec_len_prelim)
+		{
+			start_new_entry1 += rest_in_block;
+		}
+
+	}
 	// rewrite rec_len of last entry
 
-	if (!dir_empty)
+	if (!dir_empty && space_found != CDE_NULL_INODE_FOUND)
 	{
 		last_entry.rec_len = start_new_entry1 - offset_last;
 
@@ -1914,11 +1970,21 @@ int create_dir_entry_ext2(file_ext2_t* filp_parent_directory, file_ext2_t* filp_
 	}
 
 	// calculate the end of the new entry
-	// the end must fall together with the end of an ext2 block
 
 	uint32_t end_new_entry = start_new_entry1 + rec_len_prelim;
+	uint32_t end_new_entry1 = end_new_entry;
 
-	uint32_t end_new_entry1 = align(max(end_new_entry, parent_dir_size), ext2_blocksize);
+	uint32_t end_last_entry = offset_last + last_entry_rec_len;
+
+	if (space_found)
+	{
+		end_new_entry1 = end_last_entry;
+	}
+
+	if (!space_found)
+	{
+		end_new_entry1 = align(max(end_new_entry, parent_dir_size), ext2_blocksize);
+	}
 
 	new_entry.rec_len = end_new_entry1 - start_new_entry1;
 
