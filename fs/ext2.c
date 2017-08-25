@@ -94,35 +94,35 @@ inline uint32_t get_last_data_block_pos_in_block_group_bitmap(uint32_t bgd_index
 
 inode_ext2_t* alloc_inode_ext2()
 {
-	inode_ext2_t* p = (inode_ext2_t*) malloc(sizeof(inode_ext2_t));
+	inode_ext2_t* p = malloc(sizeof(inode_ext2_t));
 	memset(p, 0, sizeof(inode_ext2_t));
 	return p;
 }
 
 bg_desc_ext2_t* alloc_bg_desc_ext2()
 {
-	bg_desc_ext2_t* p = (bg_desc_ext2_t*) malloc(sizeof(bg_desc_ext2_t));
+	bg_desc_ext2_t* p = malloc(sizeof(bg_desc_ext2_t));
 	memset(p, 0, sizeof(bg_desc_ext2_t));
 	return p;
 }
 
 blk_iterator_t* alloc_blk_iterator()
 {
-	blk_iterator_t* p = (blk_iterator_t*) malloc(sizeof(blk_iterator_t));
+	blk_iterator_t* p = malloc(sizeof(blk_iterator_t));
 	memset(p, 0, sizeof(blk_iterator_t));
 	return p;
 }
 
 superblock_ext2_t* alloc_superblock_ext2()
 {
-	superblock_ext2_t* p = (superblock_ext2_t*) malloc(sizeof(superblock_ext2_t));
+	superblock_ext2_t* p = malloc(sizeof(superblock_ext2_t));
 	memset(p, 0, sizeof(superblock_ext2_t));
 	return p;
 }
 
 file_ext2_t* alloc_file_ext2()
 {
-	file_ext2_t* p = (file_ext2_t*) malloc(sizeof(file_ext2_t));
+	file_ext2_t* p = malloc(sizeof(file_ext2_t));
 	memset(p, 0, sizeof(file_ext2_t));
 	return p;
 }
@@ -138,7 +138,7 @@ int alloc_if_empty(char **buf, uint32_t size)
 {
 	if (!*buf)
 	{
-		*buf = (char*) malloc(size);
+		*buf = malloc(size);
 	}
 	return 0;
 }
@@ -1062,6 +1062,8 @@ int allocate_new_data_block(blk_iterator_t *it, uint32_t to_write)
 
 	sb->s_free_blocks_count -= blocks_new_allocated;
 
+	sb->s_wtime = get_timestamp();
+
 	write_inode_ext2(filp);
 	write_superblock_ext2(filp->dev_file, sb);
 
@@ -1212,11 +1214,10 @@ int allocate_new_inode(file_ext2_t* filp, uint32_t goal_bgd_index, uint16_t imod
 
 	retval = 0;
 
-
+ende:
 	free(inode_bitmap);
 	//free(pbgd_akt);
 
-	ende:
 	return retval;
 
 }
@@ -1302,7 +1303,7 @@ int deallocate_data_blocks_level(file_ext2_t* file_del, uint32_t blk_num, int le
 
 	uint32_t ext2_blocksize = GET_BLOCKSIZE_EXT2(file_del->sb);
 
-	char* scratch = (char*) malloc(ext2_blocksize);
+	char* scratch = malloc(ext2_blocksize);
 
 	read_from_dev(file_del->dev_file, scratch, ext2_blocksize,
 			BLKNUM_TO_OFFSET(blk_num, ext2_blocksize));
@@ -1366,7 +1367,7 @@ int deallocate_inode(file_ext2_t* file_del)
 
 	uint32_t blk_num_inode_bitmap = akt_bgd.bg_inode_bitmap;
 
-	char* inode_bitmap = (char*) malloc(ext2_blocksize);
+	char* inode_bitmap = malloc(ext2_blocksize);
 
 	read_from_dev(file_del->dev_file, inode_bitmap, ext2_blocksize,
 			BLKNUM_TO_OFFSET(blk_num_inode_bitmap, ext2_blocksize));
@@ -1586,8 +1587,12 @@ int write_file_ext2(file_ext2_t* file, char* buf, uint32_t counta, uint32_t offs
 		file->pinode->i_size = last_offset;
 	}
 
-	write_inode_ext2(file);
+	superblock_ext2_t* sb = file->sb;
 
+	sb->s_wtime = t_stamp;
+
+	write_inode_ext2(file);
+	write_superblock_ext2(file->dev_file, sb);
 
 	return nwrt_total;
 
@@ -2141,7 +2146,8 @@ int unlink_file_ext2(file_ext2_t* filp_dir, char* fname)
 	}
 	else
 	{
-		write_dir_entry_ext2(filp_dir, akt_offset, &akt_entry);
+		write_file_ext2(filp_dir, zero_block, akt_entry.rec_len, akt_offset);
+		//write_dir_entry_ext2(filp_dir, akt_offset, &akt_entry);
 	}
 
 	retval = 0;
@@ -2274,7 +2280,7 @@ int display_regular_file_ext2(file_ext2_t *file)
 	ncnt = 0;
 
 	const int aux_buf_size = 16 * 1024;
-	char* auxbuf = (char*)malloc(aux_buf_size);
+	char* auxbuf = malloc(aux_buf_size);
 
 	int cnt_zeros = 0;
 

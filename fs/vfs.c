@@ -226,7 +226,7 @@ int ddriv_write_blk(file_t* fil, char* buf, size_t count, size_t* offset)
 
 		uint32_t ncnt = min(blksize - blk_offset, akt_count);
 
-		int nrd;
+		int nrd = 0;
 		if (ncnt < blksize)
 		{
 			nrd = pfops->readblk(fil, blk_wrt_index, &blk_buf);
@@ -685,15 +685,39 @@ int execute_cp(int argc, char* argv[])
 
 		create_file_ext2(&file_pwd, &filp_new_file, argv[2], EXT2_S_IFREG | 0644, 0);
 
-		uint32_t size_infile = file_in.pinode->i_size;
+		//uint32_t size_infile = file_in.pinode->i_size;
 
-		char* file_buf = malloc(size_infile);
+		//goto try_skip;
 
-		read_file_ext2(&file_in, file_buf, size_infile, 0);
+		const int BUFSIZE = 128;
 
-		write_file_ext2(&filp_new_file, file_buf, size_infile, 0);
+		char* file_buf = malloc(BUFSIZE);
+
+		int offset_akt = 0;
+		int to_rd;
+		int num_rd;
+
+		do
+		{
+
+			to_rd = BUFSIZE - 1;
+
+			num_rd = read_file_ext2(&file_in, file_buf, to_rd, offset_akt);
+
+			if (num_rd > 0)
+			{
+				int num_wrt = write_file_ext2(&filp_new_file, file_buf, num_rd, offset_akt);
+
+				ASSERT(num_wrt == num_rd);
+
+				offset_akt += num_rd;
+			}
+		}
+		while (num_rd > 0);
 
 		free(file_buf);
+
+		//try_skip:
 
 		destroy_file_ext2(&filp_new_file);
 	}
